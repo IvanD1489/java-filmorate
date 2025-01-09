@@ -24,7 +24,7 @@ public class FilmController {
         return new ArrayList<>(films.values());
     }
 
-    @PostMapping(consumes = "application/octet-stream")
+    @PostMapping
     public Film create(@RequestBody Film film) throws ValidationException {
         if (film.getDuration() < 1) {
             String err = "Продолжительность фильма должна быть положительным числом";
