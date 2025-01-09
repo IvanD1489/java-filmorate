@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -14,11 +14,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
+@Slf4j
 public class UserController {
 
     private final Map<Long, User> users = new HashMap<>();
-
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @GetMapping
     public List<User> getUsers() {
@@ -27,12 +26,7 @@ public class UserController {
     }
 
     @PostMapping
-    public User create(@RequestBody User user) throws ValidationException {
-        if (user.getEmail().isEmpty() || !user.getEmail().contains("@")) {
-            String err = "Почта не может быть пустой и должна содержать символ @";
-            log.error("При создании пользователя возникла ошибка: {}. Указанная почта: {}", err, user.getEmail());
-            throw new ValidationException("Почта не может быть пустой и должна содержать символ @");
-        }
+    public User create(@RequestBody @Valid User user) throws ValidationException {
         if (user.getLogin().isEmpty() || user.getLogin().contains(" ")) {
             String err = "Логин не может быть пустой и не может содержать пробелов";
             log.error("При создании пользователя возникла ошибка: {}. Указанный логин: {}", err, user.getLogin());
@@ -58,12 +52,7 @@ public class UserController {
     }
 
     @PutMapping
-    public User update(@RequestBody User user) throws ValidationException {
-        if (user.getEmail().isEmpty() || !user.getEmail().contains("@")) {
-            String err = "Почта не может быть пустой и должна содержать символ @";
-            log.error("При обновлении пользователя возникла ошибка: {}. Указанная почта: {}", err, user.getEmail());
-            throw new ValidationException("Почта не может быть пустой и должна содержать символ @");
-        }
+    public User update(@RequestBody @Valid User user) throws ValidationException {
         if (user.getLogin().isEmpty() || user.getLogin().contains(" ")) {
             String err = "Логин не может быть пустой и не может содержать пробелов";
             log.error("При обновлении пользователя возникла ошибка: {}. Указанный логин: {}", err, user.getLogin());

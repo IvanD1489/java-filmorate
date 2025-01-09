@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -14,11 +13,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/films")
+@Slf4j
 public class FilmController {
 
     private final Map<Long, Film> films = new HashMap<>();
-
-    private static final Logger log = LoggerFactory.getLogger(FilmController.class);
 
     @GetMapping
     public List<Film> getFilms() {
@@ -26,7 +24,7 @@ public class FilmController {
         return new ArrayList<>(films.values());
     }
 
-    @PostMapping
+    @PostMapping(consumes = "application/octet-stream")
     public Film create(@RequestBody Film film) throws ValidationException {
         if (film.getDuration() < 1) {
             String err = "Продолжительность фильма должна быть положительным числом";
