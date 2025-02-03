@@ -2,27 +2,38 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exceptions.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
 @Slf4j
 public class UserController {
 
-    private final Map<Long, User> users = new HashMap<>();
+    private final UserStorage userStorage;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    public UserController(UserStorage userStorage) {
+        this.userStorage = userStorage;
+    }
 
     @GetMapping
     public List<User> getUsers() {
         log.info("Пользователь запросил список всех пользователей.");
-        return new ArrayList<>(users.values());
+        return userStorage.getAllUsers();
     }
 
     @PostMapping
@@ -43,16 +54,17 @@ public class UserController {
             user.setName(user.getLogin());
         }
 
-        user.setId(getNextId());
-        users.put(user.getId(), user);
+        if (user.getFriends() == null) {
+            user.setFriends(new HashSet<>());
+        }
 
+        userStorage.addUser(user);
         log.info("Пользователь cоздал нового пользователя. Ему присвоен идентификатор: {}", user.getId());
-
         return user;
     }
 
     @PutMapping
-    public User update(@RequestBody @Valid User user) throws ValidationException {
+    public User update(@RequestBody @Valid User user) throws ValidationException, ResourceNotFoundException {
         if (user.getLogin().isEmpty() || user.getLogin().contains(" ")) {
             String err = "Логин не может быть пустой и не может содержать пробелов";
             log.error("При обновлении пользователя возникла ошибка: {}. Указанный логин: {}", err, user.getLogin());
@@ -68,28 +80,87 @@ public class UserController {
             user.setName(user.getLogin());
         }
 
-        User userToUpdate = users.get(user.getId());
-        if (userToUpdate == null) {
-            throw new ValidationException("Пользователь не найден");
+        if (userStorage.getUserById(user.getId()) == null) {
+            log.error("Пользователь с идентификатором {} не найден.", user.getId());
+            throw new ResourceNotFoundException("Пользователь не найден");
         }
-
-        userToUpdate.setName(user.getName());
-        userToUpdate.setBirthday(user.getBirthday());
-        userToUpdate.setEmail(user.getEmail());
-        userToUpdate.setLogin(user.getLogin());
 
         log.info("Пользователь обновил запись с идентификатором {}", user.getId());
 
-        return userToUpdate;
+        return userStorage.updateUser(user);
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @GetMapping("/{id}")
+    public User getUserById(@PathVariable long id) throws ResourceNotFoundException {
+        User user = userStorage.getUserById(id);
+        if (user != null) {
+            log.info("Пользователь с идентификатором {} найден.", id);
+            return user;
+        } else {
+            log.error("Пользователь с идентификатором {} не найден.", id);
+            throw new ResourceNotFoundException("Пользователь с идентификатором " + id + " не найден");
+        }
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable long id) {
+        userStorage.deleteUser(id);
+        log.info("Пользователь с идентификатором {} удалён.", id);
+    }
+
+    @PutMapping("/{userId}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void addFriend(@PathVariable long userId, @PathVariable long friendId) throws ResourceNotFoundException {
+        if (userStorage.getUserById(userId) == null) {
+            log.error("Пользователь с идентификатором {} не найден.", userId);
+            throw new ResourceNotFoundException("Пользователь не найден");
+        }
+        if (userStorage.getUserById(friendId) == null) {
+            log.error("Пользователь с идентификатором {} не найден.", friendId);
+            throw new ResourceNotFoundException("Пользователь не найден");
+        }
+        userService.addFriend(userId, friendId);
+    }
+
+    @DeleteMapping("/{userId}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeFriend(@PathVariable long userId, @PathVariable long friendId) throws ResourceNotFoundException {
+        if (userStorage.getUserById(userId) == null) {
+            log.error("Пользователь с идентификатором {} не найден.", userId);
+            throw new ResourceNotFoundException("Пользователь не найден");
+        }
+        if (userStorage.getUserById(friendId) == null) {
+            log.error("Пользователь с идентификатором {} не найден.", friendId);
+            throw new ResourceNotFoundException("Пользователь не найден");
+        }
+        userService.removeFriend(userId, friendId);
+    }
+
+    @GetMapping("/{userId}/friends/common/{otherUserId}")
+    public List<User> getCommonFriends(@PathVariable long userId, @PathVariable long otherUserId) throws ResourceNotFoundException {
+        if (userStorage.getUserById(userId) == null) {
+            log.error("Пользователь с идентификатором {} не найден.", userId);
+            throw new ResourceNotFoundException("Пользователь не найден");
+        }
+        if (userStorage.getUserById(otherUserId) == null) {
+            log.error("Пользователь с идентификатором {} не найден.", otherUserId);
+            throw new ResourceNotFoundException("Пользователь не найден");
+        }
+        return userService.getCommonFriends(userId, otherUserId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public List<User> getFriends(@PathVariable long id) throws ResourceNotFoundException {
+        if (userStorage.getUserById(id) == null) {
+            log.error("Пользователь с идентификатором {} не найден.", id);
+            throw new ResourceNotFoundException("Пользователь не найден");
+        }
+        return userService.getFriends(id);
+    }
+
+    public void deleteAllUsers() {
+        userService.deleteAllUsers();
+    }
+
 
 }
