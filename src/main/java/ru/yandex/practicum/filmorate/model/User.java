@@ -19,6 +19,5 @@ public class User {
     private String name;
     private String birthday;
     private Set<Long> friends;
-    ;
 
 }
