@@ -3,14 +3,14 @@ package ru.yandex.practicum.filmorate.storage;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
+
     private final Map<Long, Film> films = new HashMap<>();
+    private final Map<Long, Set<Long>> filmLikes = new HashMap<>();
 
     @Override
     public Film addFilm(Film film) {
@@ -43,6 +43,32 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public void deleteAllFilms() {
         films.clear();
+    }
+
+    @Override
+    public void addLike(Long filmId, Long userId){
+        filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
+    }
+
+    @Override
+    public void deleteLike(Long filmId, Long userId){
+        Set<Long> likes = filmLikes.get(filmId);
+        if (likes != null) {
+            likes.remove(userId);
+            if (likes.isEmpty()) {
+                filmLikes.remove(filmId);
+            }
+        }
+    }
+
+    @Override
+    public List<Film> getTopFilms(int count){
+        return filmLikes.entrySet().stream()
+                .sorted((e1, e2) -> Integer.compare(e2.getValue().size(), e1.getValue().size()))
+                .limit(count)
+                .map(Map.Entry::getKey)
+                .map(this::getFilmById)
+                .collect(Collectors.toList());
     }
 
     private long getNextId() {

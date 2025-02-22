@@ -5,17 +5,20 @@ import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.exceptions.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AutoConfigureTestDatabase
 @SpringBootTest
 public class FilmControllerTest {
 
@@ -40,9 +43,11 @@ public class FilmControllerTest {
 
 
     @Test
-    public void isCreatingAndGettingFilms() throws ValidationException {
-
-        Film film = new Film(1, "Test name", "Test desc", "1997-08-21", 120);
+    public void isCreatingAndGettingFilms() throws ValidationException, ResourceNotFoundException {
+        Set<Genre> genres = new HashSet<>();
+        genres.add(Genre.values().getFirst());
+        Rating rating = Rating.values().getFirst();
+        Film film = new Film(1, "Test name", "Test desc", "1997-08-21", 120, genres, rating);
         List<Film> films = new ArrayList<>();
         films.add(film);
         String toCheckWith = gson.toJson(films);
@@ -54,11 +59,13 @@ public class FilmControllerTest {
 
     @Test
     public void isUpdatingFilm() throws ValidationException, ResourceNotFoundException {
-
-        Film film = new Film(1, "Test name", "Test desc", "1997-08-21", 120);
+        Set<Genre> genres = new HashSet<>();
+        genres.add(Genre.values().getFirst());
+        Rating rating = Rating.values().getFirst();
+        Film film = new Film(1, "Test name", "Test desc", "1997-08-21", 120, genres, rating);
         filmController.create(film);
 
-        film = new Film(1, "Test name updated", "Test desc updated", "2020-08-21", 150);
+        film = new Film(film.getId(), "Test name updated", "Test desc updated", "2020-08-21", 150, genres, rating);
         filmController.update(film);
 
         String toCheckWith = gson.toJson(film);
@@ -68,11 +75,16 @@ public class FilmControllerTest {
 
     @Test
     public void isValidatingFilms() {
+        Set<Genre> genres = new HashSet<>();
+        genres.add(Genre.values().getFirst());
+        Rating rating = Rating.values().getFirst();
         boolean isError = false;
-        Film film = new Film(1, "", "Test desc", "1997-08-21", 120);
+        Film film = new Film(1, "", "Test desc", "1997-08-21", 120, genres, rating);
         try {
             filmController.create(film);
         } catch (ValidationException e) {
+            isError = true;
+        } catch (ResourceNotFoundException e) {
             isError = true;
         }
 
@@ -81,9 +93,12 @@ public class FilmControllerTest {
 
     @Test
     public void isGettingTopFilms() throws ValidationException, ResourceNotFoundException {
-        Film film1 = new Film(1, "Film 1", "Description 1", "2020-01-01", 120);
-        Film film2 = new Film(2, "Film 2", "Description 2", "2020-01-02", 150);
-        Film film3 = new Film(3, "Film 3", "Description 3", "2020-01-03", 100);
+        Set<Genre> genres = new HashSet<>();
+        genres.add(Genre.values().getFirst());
+        Rating rating = Rating.values().getFirst();
+        Film film1 = new Film(1, "Film 1", "Description 1", "2020-01-01", 120, genres, rating);
+        Film film2 = new Film(2, "Film 2", "Description 2", "2020-01-02", 150, genres, rating);
+        Film film3 = new Film(3, "Film 3", "Description 3", "2020-01-03", 100, genres, rating);
 
         User user1 = new User(1, "test1@ya.ru", "testLogin1", "Test user1", "1997-08-21", null);
         userController.create(user1);
@@ -96,11 +111,11 @@ public class FilmControllerTest {
         filmController.create(film2);
         filmController.create(film3);
 
-        filmController.addLike(1, 1);
-        filmController.addLike(2, 1);
-        filmController.addLike(2, 2);
-        filmController.addLike(3, 2);
-        filmController.addLike(3, 3);
+        filmController.addLike(film1.getId(), user1.getId());
+        filmController.addLike(film2.getId(), user1.getId());
+        filmController.addLike(film2.getId(), user2.getId());
+        filmController.addLike(film3.getId(), user2.getId());
+        filmController.addLike(film3.getId(), user3.getId());
 
 
         List<Film> topFilms = filmController.getTopFilms(2);
@@ -112,31 +127,44 @@ public class FilmControllerTest {
 
     @Test
     public void isRemovingLike() throws ValidationException, ResourceNotFoundException {
-        Film film = new Film(1, "Test Film", "Test desc", "2020-01-01", 120);
+        Set<Genre> genres = new HashSet<>();
+        genres.add(Genre.values().getFirst());
+        Rating rating = Rating.values().getFirst();
+        Film film = new Film(1, "Test Film", "Test desc", "2020-01-01", 120, genres, rating);
         filmController.create(film);
+        Film film2 = new Film(2, "Test Film", "Test desc", "2020-01-01", 120, genres, rating);
+        filmController.create(film2);
 
         User user = new User(1, "test@ya.ru", "testLogin", "Test user", "1997-08-21", null);
         userController.create(user);
+        User user2 = new User(1, "test@ya.ru", "testLogin", "Test user", "1997-08-21", null);
+        userController.create(user2);
 
-        filmController.addLike(1, 1);
+        filmController.addLike(film.getId(), user.getId());
+        filmController.addLike(film2.getId(), user.getId());
+        filmController.addLike(film2.getId(), user2.getId());
 
         List<Film> topFilmsBeforeRemoval = filmController.getTopFilms(1);
-        assertEquals(1, topFilmsBeforeRemoval.size());
+        assertEquals(gson.toJson(film2), gson.toJson(topFilmsBeforeRemoval.getFirst()));
 
-        filmController.removeLike(1, 1);
+        filmController.removeLike(film2.getId(), user.getId());
+        filmController.removeLike(film2.getId(), user2.getId());
 
         List<Film> topFilmsAfterRemoval = filmController.getTopFilms(1);
-        assertTrue(topFilmsAfterRemoval.isEmpty());
+        assertEquals(gson.toJson(film), gson.toJson(topFilmsAfterRemoval.getFirst()));
     }
 
     @Test
     public void isDeletingFilm() throws ValidationException, ResourceNotFoundException {
-        Film film = new Film(1, "Film to delete", "Description", "2020-01-01", 120);
+        Set<Genre> genres = new HashSet<>();
+        genres.add(Genre.values().getFirst());
+        Rating rating = Rating.values().getFirst();
+        Film film = new Film(1, "Film to delete", "Description", "2020-01-01", 120, genres, rating);
         filmController.create(film);
 
         assertNotNull(filmController.getFilmById(film.getId()));
 
-        filmController.deleteFilm(1);
+        filmController.deleteFilm(film.getId());
 
         assertThrows(ResourceNotFoundException.class, () -> filmController.getFilmById(1));
     }
