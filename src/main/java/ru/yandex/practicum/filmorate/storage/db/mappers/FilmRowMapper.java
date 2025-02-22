@@ -26,7 +26,7 @@ public class FilmRowMapper implements RowMapper<Film> {
         film.setMpa(rating);
 
         String genresStr = rs.getString("genres");
-        if(genresStr != null) {
+        if (genresStr != null) {
             Set<Genre> genres = new HashSet<>();
             for (String genreStr : genresStr.split(",")) {
                 Genre genre = new Genre();

@@ -54,7 +54,7 @@ public class UserDbStorage implements UserStorage {
     public User getUserById(long id) {
         String sql = "SELECT * FROM users WHERE id = ?";
         List<User> users = jdbcTemplate.query(sql, new UserRowMapper(), id);
-        if(users.isEmpty()){
+        if (users.isEmpty()) {
             return null;
         }
         return users.getFirst();
@@ -89,19 +89,19 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public void addFriend(long userId, long friendId){
+    public void addFriend(long userId, long friendId) {
         String sql = "INSERT INTO friends (user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
     }
 
     @Override
-    public void removeFriend(long userId, long friendId){
+    public void removeFriend(long userId, long friendId) {
         String sql = "DELETE FROM friends WHERE user_id = ? and friend_id = ?";
         jdbcTemplate.update(sql, userId, friendId);
     }
 
     @Override
-    public List<User> getCommonFriends(long userId, long otherUserId){
+    public List<User> getCommonFriends(long userId, long otherUserId) {
         String sql = "SELECT * from users where id in (" +
                 "   SELECT friend_id FROM friends " +
                 "   WHERE user_id = ? AND " +
@@ -113,7 +113,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public List<User> getFriends(long id){
+    public List<User> getFriends(long id) {
         String sql = "SELECT * from users where id in (" +
                 "   SELECT friend_id FROM friends " +
                 "   WHERE user_id = ?" +

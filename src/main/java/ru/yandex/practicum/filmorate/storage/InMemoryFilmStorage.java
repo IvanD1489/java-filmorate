@@ -46,12 +46,12 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public void addLike(Long filmId, Long userId){
+    public void addLike(Long filmId, Long userId) {
         filmLikes.computeIfAbsent(filmId, k -> new HashSet<>()).add(userId);
     }
 
     @Override
-    public void deleteLike(Long filmId, Long userId){
+    public void deleteLike(Long filmId, Long userId) {
         Set<Long> likes = filmLikes.get(filmId);
         if (likes != null) {
             likes.remove(userId);
@@ -62,7 +62,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getTopFilms(int count){
+    public List<Film> getTopFilms(int count) {
         return filmLikes.entrySet().stream()
                 .sorted((e1, e2) -> Integer.compare(e2.getValue().size(), e1.getValue().size()))
                 .limit(count)

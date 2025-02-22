@@ -68,7 +68,7 @@ public class FilmDbStorage implements FilmStorage {
                 "where f.id = ? " +
                 "group by f.id, f.name, f.description, f.release_date, f.duration, f.rating_id, r.name";
         List<Film> films = jdbcTemplate.query(sql, new FilmRowMapper(), id);
-        if(films.isEmpty()){
+        if (films.isEmpty()) {
             return null;
         }
         return films.getFirst();

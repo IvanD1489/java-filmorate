@@ -13,7 +13,7 @@ import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -80,7 +80,7 @@ public class FilmService {
             log.error("При создании фильма возникла ошибка: {}. Указанная дата: {}", err, film.getReleaseDate());
             throw new ValidationException(err);
         }
-        if(film.getMpa().getId() < 1 || film.getMpa().getId() > Genre.values().size()){
+        if (film.getMpa().getId() < 1 || film.getMpa().getId() > Genre.values().size()) {
             String err = "Не удалось найти рейтинг";
             log.error("При создании фильма возникла ошибка: {}.", err);
             throw new ResourceNotFoundException(err);
@@ -123,7 +123,7 @@ public class FilmService {
             log.error("Фильм с идентификатором {} не найден.", film.getId());
             throw new ResourceNotFoundException("Фильм не найден");
         }
-        if(film.getMpa().getId() < 1 || film.getMpa().getId() > Genre.values().size()){
+        if (film.getMpa().getId() < 1 || film.getMpa().getId() > Genre.values().size()) {
             String err = "Не удалось найти рейтинг";
             log.error("При создании фильма возникла ошибка: {}.", err);
             throw new ResourceNotFoundException(err);

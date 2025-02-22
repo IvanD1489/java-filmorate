@@ -22,7 +22,7 @@ public class GenreController {
 
     @GetMapping("/{id}")
     public Genre getGenreById(@PathVariable int id) throws ResourceNotFoundException {
-        if(id < 1 || id > Genre.values().size()){
+        if (id < 1 || id > Genre.values().size()) {
             throw new ResourceNotFoundException("Жанр не найден");
         }
         return Genre.values().get(id - 1);

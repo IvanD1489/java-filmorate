@@ -22,7 +22,7 @@ public class RatingController {
 
     @GetMapping("/{id}")
     public Rating getRatingById(@PathVariable int id) throws ResourceNotFoundException {
-        if(id < 1 || id > Rating.values().size()){
+        if (id < 1 || id > Rating.values().size()) {
             throw new ResourceNotFoundException("Жанр не найден");
         }
         return Rating.values().get(id - 1);
