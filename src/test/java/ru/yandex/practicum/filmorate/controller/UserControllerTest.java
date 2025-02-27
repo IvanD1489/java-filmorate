@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.exceptions.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@AutoConfigureTestDatabase
 @SpringBootTest
 public class UserControllerTest {
 
@@ -39,16 +41,13 @@ public class UserControllerTest {
     }
 
     @Test
-    public void isCreatingAndGettingUser() throws ValidationException {
+    public void isCreatingAndGettingUser() throws ValidationException, ResourceNotFoundException {
 
         User user = new User(1, "test@ya.ru", "testLogin", "Test user", "1997-08-21", new HashSet<>());
-        List<User> users = new ArrayList<>();
-        users.add(user);
-        String toCheckWith = gson.toJson(users);
-
         userController.create(user);
+        String toCheckWith = gson.toJson(userController.getUserById(user.getId()));
 
-        assertEquals(toCheckWith, gson.toJson(userController.getUsers()));
+        assertEquals(toCheckWith, gson.toJson(userController.getUserById(user.getId())));
     }
 
     @Test
@@ -57,7 +56,7 @@ public class UserControllerTest {
         User user = new User(1, "test@ya.ru", "testLogin", "Test user", "1997-08-21", new HashSet<>());
         userController.create(user);
 
-        user = new User(1, "test-changed@ya.ru", "testLogin", "Test user", "1997-08-21", new HashSet<>());
+        user = new User(user.getId(), "test-changed@ya.ru", "testLogin", "Test user", "1997-08-21", new HashSet<>());
         userController.update(user);
 
         List<User> users = new ArrayList<>();

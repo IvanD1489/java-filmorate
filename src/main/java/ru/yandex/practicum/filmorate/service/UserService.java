@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
@@ -11,12 +12,11 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Qualifier("userDbStorage")
 public class UserService {
 
     private final UserStorage userStorage;
@@ -34,12 +34,7 @@ public class UserService {
             log.error("Пользователь с идентификатором {} не найден.", friendId);
             throw new ResourceNotFoundException("Пользователь не найден");
         }
-        User user = userStorage.getUserById(userId);
-        User friend = userStorage.getUserById(friendId);
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
-        userStorage.updateUser(user);
-        userStorage.updateUser(friend);
+        userStorage.addFriend(userId, friendId);
     }
 
     public void removeFriend(long userId, long friendId) throws ResourceNotFoundException {
@@ -51,12 +46,7 @@ public class UserService {
             log.error("Пользователь с идентификатором {} не найден.", friendId);
             throw new ResourceNotFoundException("Пользователь не найден");
         }
-        User user = userStorage.getUserById(userId);
-        User friend = userStorage.getUserById(friendId);
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
-        userStorage.updateUser(user);
-        userStorage.updateUser(friend);
+        userStorage.removeFriend(userId, friendId);
     }
 
     public List<User> getCommonFriends(long userId, long otherUserId) throws ResourceNotFoundException {
@@ -70,14 +60,7 @@ public class UserService {
             throw new ResourceNotFoundException("Пользователь не найден");
         }
 
-        User user = userStorage.getUserById(userId);
-        User otherUser = userStorage.getUserById(otherUserId);
-
-        Set<Long> commonFriendIds = user.getFriends();
-        commonFriendIds.retainAll(otherUser.getFriends());
-        return commonFriendIds.stream()
-                .map(userStorage::getUserById)
-                .toList();
+        return userStorage.getCommonFriends(userId, otherUserId);
     }
 
     public List<User> getFriends(long id) throws ResourceNotFoundException {
@@ -85,12 +68,7 @@ public class UserService {
             log.error("Пользователь с идентификатором {} не найден.", id);
             throw new ResourceNotFoundException("Пользователь не найден");
         }
-        User user = userStorage.getUserById(id);
-        Set<Long> friendIds = user.getFriends();
-        return friendIds.stream()
-                .map(userStorage::getUserById)
-                .filter(Objects::nonNull)
-                .toList();
+        return userStorage.getFriends(id);
     }
 
     public void deleteAllUsers() {

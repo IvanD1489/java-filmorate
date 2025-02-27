@@ -4,11 +4,14 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class User {
 
     private long id;
@@ -18,6 +21,6 @@ public class User {
     private String login;
     private String name;
     private String birthday;
-    private Set<Long> friends;
+    private Set<Long> friends = new HashSet<>();
 
 }

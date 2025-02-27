@@ -25,7 +25,7 @@ public class FilmController {
     }
 
     @PostMapping
-    public Film create(@RequestBody Film film) throws ValidationException {
+    public Film create(@RequestBody Film film) throws ValidationException, ResourceNotFoundException {
         filmService.addFilm(film);
         log.info("Создан новый фильм. Ему присвоен идентификатор: {}", film.getId());
         return film;
